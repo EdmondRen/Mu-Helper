@@ -1,0 +1,31 @@
+## Format:
+## First line is the total number of events.
+## Each event consists of a header line for the vertex information, 
+##   followed by lines that corresponds to secondary particles
+
+## For example:
+## -----------------------------------------------------------------------
+
+
+## First line (update the number to be the number of events):
+# nevents 2
+
+
+
+## Event 1 header:
+## Format: "n 1 Vertex_PDGID  Vertex_x[mm]   Vertex_y[mm]   Vertex_z[mm]       Vertex_px[MeV]    Vertex_py[MeV]          Vertex_pz[MeV]"
+n 1              13           124500.0          4500.0          2000.0              0.0              10.0                 -4000.0
+
+## Event 1 content:
+## Format: "   particle_PDGID particle_x[mm]   particle_y[mm]   particle_z[mm]   particle_px[MeV]  particle_py[MeV]    particle_pz[MeV]"
+                 13           124500.0          4500.0          2000.0              0.0              10.0                -4000.0
+                 13           124500.0          4500.0          2000.0              100.0            433.0               -4000.0
+                 11           124500.0          4500.0          2000.0              400.0            222.0               -4000.0
+                 
+
+## You can add arbiturary number of events....
+## ....
+                                 
+n 2              13           124500.0          4500.0          2000.0              0.0              10.0                -4000.0
+                 13           124500.0          4500.0          2000.0              0.0               0.0                -4000.0
+                 13           124500.0          4500.0          2000.0              100.0             0.0                -4000.0       

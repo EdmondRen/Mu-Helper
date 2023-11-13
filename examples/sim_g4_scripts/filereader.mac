@@ -1,0 +1,13 @@
+# An example of how to use FileReaderGenerator.
+
+/det/select Box 
+/gen/select file_reader 
+
+# The pathname parameter should be a text file formated to describe vertex and hits,
+# Each event consists of multiple rows separated with a line starting with "n"
+
+
+/gen/file_reader/pathname scripts/filereader_data.txt
+
+# The number of events here must be equal to the number of particles in the file.
+/run/beamOn 2

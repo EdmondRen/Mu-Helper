@@ -1,0 +1,14 @@
+# Select the Detector. Box is the full 100x100m tracker
+/det/select Prototype
+
+# Select the Generator
+/gen/select basic
+# Set Generator-specific particle properties
+/gen/basic/id 13
+/gen/basic/t0 0 ns
+/gen/basic/vertex -2.386   0   -10 m
+/gen/basic/p_unit 0 0 1
+/gen/basic/p_mag 100 GeV/c
+
+# Set number of evets to run
+/run/beamOn 10

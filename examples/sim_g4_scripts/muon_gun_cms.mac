@@ -1,0 +1,27 @@
+# Center the gun 1cm below the center of the middle module in the full detector
+# phi: arctan(44.5/8)
+# eta: eta = -ln (tan (theta/2)), theta  = 0.5pi-arctan(44.5/8) //44.5: 4+half module, 8:1+5+1+1
+# Run this script: simulation -o /project/def-mdiamond/tomren/mathusla/data/fit_study_6layer/muon_cms_test/ -s muon_gun_tom_cms.mac energy 100 count 100
+
+
+# Select the Detector
+/det/select Box
+
+# Select the Generator
+/gen/select range
+
+# Set particle properties
+/gen/range/id 13
+/gen/range/t0 0 ns
+/gen/range/vertex 0   0   84.57 m
+/gen/range/p_unit 0 0 -1
+
+/gen/range/phi_min -0.6 rad 
+/gen/range/phi_max  0.6 rad
+/gen/range/eta_min  0.6
+/gen/range/eta_max  1.7
+
+/gen/range/p_mag 50 GeV/c
+
+# Set number of evets to run
+/run/beamOn 60000
