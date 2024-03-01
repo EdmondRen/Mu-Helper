@@ -661,7 +661,7 @@ def cut_pulses(traces, cut_amp = None, cut_baseline="auto", cut_triggerpoint = T
 
         # if enabled, do amplitude cut
         if cut_amp is not None:
-            mask_amp = (trace_info[:,0]>cut_amp[0]) & (trace_info[:,0]<cut_amp[1])
+            mask_amp = (trace_info[:,7]>cut_amp[0]) & (trace_info[:,7]<cut_amp[1])
         
         
         mask_all = mask_baseline & mask_max & mask_std & mask_slope & mask_skew & mask_pileup & mask_triggerpoint & mask_amp
