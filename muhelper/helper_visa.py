@@ -14,7 +14,8 @@ import os
 import types
 import platform
 from pylab import *
-
+from helper_basic import *
+import helper_basic as hp
 debug=  False
 
 
@@ -152,7 +153,7 @@ def get_calibration(scope, read_channel = [1,2]):
     
     return calibration_data
 
-def read_waveform(scope, trigger_channel = 1, read_channel = [1,2], acquire_length = 4096, calibrate = True, initialize = False, calibration_data=None):
+def read_waveform(scope, trigger_channel = 1, read_channel = [1,2], acquire_length = 4096, calibrate = True, initialize = False, calibration_data=None, trigger_mode="normal"):
 
     if initialize:
         # Trigger
@@ -161,7 +162,11 @@ def read_waveform(scope, trigger_channel = 1, read_channel = [1,2], acquire_leng
         # scope.write(":TRIGger:EDGE:SLOPe NEGative")
 
         # Acquisation setup
-        scope.write(":ACQuire:TYPE NORMal")
+        if trigger_mode == "normal":
+            scope.write(":ACQuire:TYPE NORMal")
+        else:
+            scope.write(":ACQuire:TYPE AUTO")
+
         scope.write(":ACQuire:MODE RTIMe") # Realtime acquire mode
         scope.write(":ACQuire:INTerpolate 0") # Disable interpolation
         scope.write(f":ACQuire:POINts:ANALog {acquire_length}")
@@ -223,7 +228,7 @@ def get_events(scope, Nevents = 100, trigger_channel = 1, read_channel = [1,2], 
         
         
     # Initialize settings:
-    data,time_series=read_waveform(scope, trigger_channel = 1, read_channel = [1,2], acquire_length = 4096, calibrate = False, initialize = True, calibration_data=None)
+    data,time_series=read_waveform(scope, trigger_channel = trigger_channel, read_channel = read_channel, acquire_length = acquire_length, calibrate = False, initialize = True, calibration_data=None)
     # Get the calibration 
     calibration_data = get_calibration(scope)
     
@@ -329,17 +334,80 @@ def upload_waveform(funcgen, waveform_int, waveform_duration = 0.4, ch = 1, inte
 
         # Set output parameter
         funcgen.write(f":OUTPut{ch}:LOAD output_impedance");               # Output termination is 50 Ohms
-        funcgen.write(f":VOLT{ch}:OFFS {output_offset}VPP");  # Set the frequency to 125kHz so that 1 sample = 1ns. 122070 = 2Ghz/16384. 2.5 GHz for 81160
+        funcgen.write(f":VOLT{ch}:OFFS {output_offset}VPP");  
 
 
         funcgen.write(":DISP ON");         
         funcgen.write(f":OUTPut{ch} ON");      # Output the selected arb waveform  
         
-    funcgen.write(f":VOLT{ch} {output_voltage}VPP");  # Set the frequency to 125kHz so that 1 sample = 1ns. 122070 = 2Ghz/16384. 2.5 GHz for 81160
+
+    # Set amplitude
+    funcgen.write(f":VOLT{ch} {output_voltage}VPP"); 
         
     
 def trigger(funcgen):
     funcgen.write(":TRIG")
+
+def mc_exp_decay(n_expected, n_threshold, WLS_t_decay, LASER_time_spread, N_EXPERIMENTS =4000, N_PLOTS=200,
+                 SEED=1, PULSE=None, Fs=2.5, noise_voltage_density = 1e-9):
+
+    # # Signal size and trigger
+    # n_expected = [n_low, n_high]# number of eh expected
+    # n_threshold = 4.5 # threshold [eh]
+
+    # # WLS fiber parameter
+    # WLS_t_decay = 2.7 # [ns]
+    # # Laser parameter
+    # LASER_time_spread = 0.15 # [ns], sigma, Gaus wavelet
+
+
+    # # Run parameters
+    # N_EXPERIMENTS = 10_000
+    # N_PLOTS = 200
+    # SEED = 1
+
+    PULSE_DURATION = len(PULSE)/Fs
+    TIME_SERIES = np.linspace(0,PULSE_DURATION,len(PULSE))
+    RNG = np.random.default_rng(seed=SEED)
+
+    results_trigger_time = []
+    results_pulses = []
+    for i in tqdm(range(N_EXPERIMENTS)):
+        # Get the actual numer of photons by Sampling from poisson
+        if type(n_expected) is not list:
+            RNG.poisson(lam=n_expected)
+        else:
+            n_gen = RNG.integers(n_expected[0], n_expected[1])
+ 
+        if n_gen>0:
+            pulse_this = np.zeros_like(PULSE)
+            # Get the time of each photon by sampling from Gauss
+            # time_gen = RNG.normal(loc=LASER_time_spread*7, scale=LASER_time_spread*7, size=n_gen)
+            time_gen = 0
+ 
+            # Get the decay time of each photon by sampling from exponential
+            time_decay = time_gen + RNG.exponential(scale=WLS_t_decay, size=n_gen)
+ 
+            for iphoton in range(n_gen):
+                if time_decay[iphoton]>0 and time_decay[iphoton]<PULSE_DURATION:
+                    # Roll and pile one more pulse to the final pulse
+                    pulse_this+=roll_zeropad(PULSE, int(time_decay[iphoton]*Fs))
+ 
+            results_trigger_time.append(np.argmax(pulse_this>(n_threshold*np.max(PULSE))))
+    
+            # Add in noise
+            noise_trace = hp.band_limited_noise(0, 1.5e9, samples=len(PULSE), samplerate=int(Fs*1e9))* noise_voltage_density
+            pulse_this+=noise_trace
+ 
+            if i<N_PLOTS:
+                results_pulses.append(pulse_this)
+            
+
+             
+    results_trigger_time=np.array(results_trigger_time)   
+    results_pulses=np.array(results_pulses)
+    
+    return results_trigger_time, results_pulses, TIME_SERIES
         
     
     
