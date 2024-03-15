@@ -230,7 +230,7 @@ def get_events(scope, Nevents = 100, trigger_channel = 1, read_channel = [1,2], 
     # Initialize settings:
     data,time_series=read_waveform(scope, trigger_channel = trigger_channel, read_channel = read_channel, acquire_length = acquire_length, calibrate = False, initialize = True, calibration_data=None)
     # Get the calibration 
-    calibration_data = get_calibration(scope)
+    calibration_data = get_calibration(scope, read_channel = read_channel)
     
     
     # Start repetitive acquisation
@@ -411,4 +411,64 @@ def mc_exp_decay(n_expected, n_threshold, WLS_t_decay, LASER_time_spread, N_EXPE
         
     
     
+def mc_exp_decay_withps(n_expected, n_threshold, WLS_t_decay, ps_decay, LASER_time_spread, N_EXPERIMENTS =4000, N_PLOTS=200,
+                 SEED=1, PULSE=None, Fs=2.5, noise_voltage_density = 0):
+
+    # # Signal size and trigger
+    # n_expected = [n_low, n_high]# number of eh expected
+    # n_threshold = 4.5 # threshold [eh]
+
+    # # WLS fiber parameter
+    # WLS_t_decay = 2.7 # [ns]
+    # # Laser parameter
+    # LASER_time_spread = 0.15 # [ns], sigma, Gaus wavelet
+
+
+    # # Run parameters
+    # N_EXPERIMENTS = 10_000
+    # N_PLOTS = 200
+    # SEED = 1
+
+    PULSE_DURATION = len(PULSE)/Fs
+    TIME_SERIES = np.linspace(0,PULSE_DURATION,len(PULSE))
+    RNG = np.random.default_rng(seed=SEED)
+
+    results_trigger_time = []
+    results_pulses = []
+    for i in tqdm(range(N_EXPERIMENTS)):
+        # Get the actual numer of photons by Sampling from poisson
+        if type(n_expected) is not list:
+            n_gen = n_expected
+        else:
+            n_gen = RNG.integers(n_expected[0], n_expected[1])
+ 
+        if n_gen>0:
+            pulse_this = np.zeros_like(PULSE)
+            # Get the time of each photon by sampling from Gauss
+            # time_gen = RNG.normal(loc=LASER_time_spread*7, scale=LASER_time_spread*7, size=n_gen)
+            time_gen = 0
+ 
+            # Get the decay time of each photon by sampling from exponential
+            time_decay = time_gen + RNG.exponential(scale=WLS_t_decay, size=n_gen) + RNG.exponential(scale=ps_decay,size=n_gen)
+            
+ 
+            for iphoton in range(n_gen):
+                if time_decay[iphoton]>0 and time_decay[iphoton]<PULSE_DURATION:
+                    # Roll and pile one more pulse to the final pulse
+                    pulse_this+=roll_zeropad(PULSE, int(time_decay[iphoton]*Fs))
+ 
+            results_trigger_time.append(np.argmax(pulse_this>(n_threshold*np.max(PULSE))))
     
+            # Add in noise
+            # noise_trace = hp.band_limited_noise(0, 1.5e9, samples=len(PULSE), samplerate=int(Fs*1e9))* noise_voltage_density
+            # pulse_this+=noise_trace
+ 
+            if i<N_PLOTS:
+                results_pulses.append(pulse_this)
+            
+
+             
+    results_trigger_time=np.array(results_trigger_time)   
+    results_pulses=np.array(results_pulses)
+    
+    return results_trigger_time, results_pulses, TIME_SERIES
