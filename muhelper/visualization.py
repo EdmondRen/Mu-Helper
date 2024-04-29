@@ -653,6 +653,91 @@ def plot_truth(event, fig=None, disp_det_view=True, disp_vertex=True, disp_filer
     fig.tight_layout()
     return fig
 
+def plot_truth_new(Tree, fig=None, disp_det_view=True, disp_vertex=True, disp_filereader_vertex=True, filereader_vertex_ind=1, disp_first_hit=False, make_legend=True):
+    """
+    Function to plot the truth of one event
+    Tom Ren, 2023.2
+    """ 
+    # Prepare the canvas
+    if fig is None:
+        fig,axs=plt.subplots(2,2,figsize=(12,9))
+        axs=axs.flatten().tolist()
+    else:
+        axs=fig.axes
+
+    # Extract truth information
+    truthTrackList_list = event.Event.ExtractTruthPhysics_tree(Tree)        
+    
+    # Plot tracks
+    for track in truthTrackList_list:      
+        # Each track is a list of each point is [x,y,z,t, PID, Energy, TRACK_ID]
+        x,y,z,t = np.array(track[:4])
+        pid = track[4][0]
+        track_label = pdg_name(pid)
+        track_color = pdg_color(pid)
+        axs[0].plot(z,y, color=track_color,marker=".",linewidth=1,markersize=1,label=track_label)
+        axs[1].plot(x,y, color=track_color,marker=".",linewidth=1,markersize=1,label=track_label)
+        axs[2].plot(z,x, color=track_color,marker=".",linewidth=1,markersize=1,label=track_label)
+        # axs[3].plot(t,y, color=track_color,marker=".",linewidth=1,markersize=1,label=track_label)
+                
+            
+    # Plot vertex
+    if disp_vertex:
+        try:
+            used_gens_inds = np.where(np.array(Tree.GenParticle_G4index) != -1)[0]
+            if len(used_gens_inds) != 0:
+                vert_truth = [Tree.GenParticle_y[int(used_gens_inds[0])] / 10,
+                                    Tree.GenParticle_x[int(used_gens_inds[0])] / 10,
+                                    Tree.GenParticle_z[int(used_gens_inds[0])] / 10] # only first since all used
+
+                #truth vertex location
+                vertex_coord_dete = np.array([vert_truth[0], vert_truth[1], vert_truth[2]])
+                axs[0].scatter(vertex_coord_dete[2],vertex_coord_dete[1],s=60,marker="*", color="tab:green",alpha=1,zorder=100,label="Primary Vertex")
+                axs[1].scatter(vertex_coord_dete[0],vertex_coord_dete[1],s=60,marker="*", color="tab:green",alpha=1,zorder=100)
+                axs[2].scatter(vertex_coord_dete[2],vertex_coord_dete[0],s=60,marker="*", color="tab:green",alpha=1,zorder=100)            
+        except:
+            pass    
+        
+    # Plot vertex from filereader:
+    if disp_filereader_vertex:
+        try:
+            vertex_truth = np.array([Tree.GenParticle_y[filereader_vertex_ind], -Tree.GenParticle_z[filereader_vertex_ind] + 85.47*1000, Tree.GenParticle_x[filereader_vertex_ind]])*0.1 # mm to cm
+            # Plot the truth vertex
+            axs=fig.axes
+            axs[0].scatter(vertex_truth[2],vertex_truth[1],s=30,marker="D", color="cyan",alpha=1,zorder=100,label="Truth Vertex")
+            axs[1].scatter(vertex_truth[0],vertex_truth[1],s=30,marker="D", color="cyan",alpha=1,zorder=100)
+            axs[2].scatter(vertex_truth[2],vertex_truth[0],s=30,marker="D", color="cyan",alpha=1,zorder=100)        
+        except:
+            pass
+            
+    if disp_first_hit:
+        first_hit = util.coord_cms2det(np.array([Tree.Hit_x[0], Tree.Hit_y[0], Tree.Hit_z[0]]))
+        axs[0].scatter(first_hit[0],first_hit[2],s=60,marker="x", color="k",alpha=0.5,zorder=100,label="First hit")
+        axs[1].scatter(first_hit[1],first_hit[2],s=60,marker="x", color="k",alpha=0.5,zorder=100)
+        axs[2].scatter(first_hit[0],first_hit[1],s=60,marker="x", color="k",alpha=0.5,zorder=100)
+
+    
+    if disp_det_view:
+        drawdet_xz(axis=axs[0],alpha=0.2)
+        drawdet_yz(axis=axs[1],alpha=0.2)
+        drawdet_xy(axis=axs[2],alpha=0.2)
+            
+    axs[0].set_xlabel("x (beamline) [m]")
+    axs[0].set_ylabel("z [m]")
+    axs[1].set_xlabel("y [m]")
+    axs[1].set_ylabel("z [m]")
+    axs[2].set_xlabel("x [m]")
+    axs[2].set_ylabel("y [m]")
+    # Put legend in the last grid
+    handles, labels = axs[0].get_legend_handles_labels()
+    if make_legend:
+        labels_unique, labels_inds = np.unique(labels, return_index=True)
+        handles=np.array(handles)
+        fig.legend(handles[labels_inds], labels_unique, loc=(0.52,0.05),framealpha=1,ncol=4, fontsize=9)
+    axs[3].axis("off")
+    fig.tight_layout()
+    return fig
+
 def get_digi(event, use_cms=True):
     hits=[]
     for i in range(len(event.Tree.Digi_x)):

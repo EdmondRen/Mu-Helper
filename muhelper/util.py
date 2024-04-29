@@ -7,6 +7,7 @@ import ast
 import copy as cp
 from glob import glob
 import types
+import scipy.ndimage
 from tqdm import tqdm
 from types import ModuleType, FunctionType
 from gc import get_referents
@@ -860,13 +861,16 @@ class Utils:
         return x[i] + (x[i+1] - x[i]) * ((half - y[i]) / (y[i+1] - y[i]))
 
     @staticmethod
-    def fwhm(x, y, height=0.5):
+    def fwhm(x, y, height=0.5, sigma=0):
         """
         Find the interval in x corrsponding to full width half maximum
         x: list of x values
         y: list of y values
         height: default to 0.5 (half maximum)
+        sigma: use gaussian filter to smooth the data, in unit of bins
         """
+        if sigma>0:
+            y = scipy.ndimage.gaussian_filter(y, sigma=sigma)
         half = max(y)*height
         signs = np.sign(np.add(y, -half))
         zero_crossings = (signs[0:-2] != signs[1:-1])

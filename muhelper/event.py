@@ -139,6 +139,50 @@ class Event:
             self.truthTrackList_list.append(current_track_sort)
 
         return self.truthTrackList_list
+    
+    @staticmethod
+    def ExtractTruthPhysics_tree(Tree, timeRangeCut=0.1):
+        
+        """
+        Return a list of
+        [x,y,z,t, PID, Energy, TRACK_ID, TRACK_ID_parent]
+        """
+
+        # Tree.GetEntry(entry)
+        truthTrackList_list=[]
+        particleSet = set()
+
+        track_ids = np.array(util.c2list(Tree.Hit_G4TrackId))
+        track_ids_parent = np.array(util.c2list(Tree.Hit_G4ParentTrackId))
+        hits_x = np.array(util.c2list(Tree.Hit_x))
+        hits_y = np.array(util.c2list(Tree.Hit_y))
+        hits_z = np.array(util.c2list(Tree.Hit_z))
+        hits_t = np.array(util.c2list(Tree.Hit_time))
+        hits_pid = np.array(util.c2list(Tree.Hit_particlePdgId))
+        hits_energy = np.array(util.c2list(Tree.Hit_particleEnergy))
+
+        track_ids_unique = np.unique(track_ids)
+        hit_inds = np.arange(len(track_ids))
+
+        for trackid in track_ids_unique:
+            hit_inds_track = hit_inds[track_ids==trackid]
+
+            # each hit is a list of [x, y, z, t, pid, energy]
+            currentTrack = [hits_x[hit_inds_track].tolist(),hits_y[hit_inds_track].tolist(),hits_z[hit_inds_track].tolist(),hits_t[hit_inds_track].tolist(),hits_pid[hit_inds_track].tolist(),hits_energy[hit_inds_track].tolist(),track_ids[hit_inds_track], track_ids_parent[hit_inds_track]]
+
+            # Require >2 hits
+            if (len(currentTrack[0])) <= 2:
+                continue
+
+            # Require time range
+            if currentTrack[3][-1]-currentTrack[3][0] < timeRangeCut:
+                continue
+
+            # sort hits by time
+            current_track_sort  = util.sortbyrow(np.array(currentTrack), 3) 
+            truthTrackList_list.append(current_track_sort)
+
+        return truthTrackList_list    
    
     def Print(self):
 
