@@ -108,7 +108,7 @@ def coord_det2sim(vector_xyz):
     input: vector_xyz = (x,y,z), unit is m
     return: transformed (x',y',z'), unit is m
     """
-    return np.array([vector_xyz[0]+119.5, vector_xyz[1], -vector_xyz[2]-steel_height])
+    return np.array([vector_xyz[0]+89.5, vector_xyz[1], -vector_xyz[2]-steel_height])
 def coord_sim2cms(vector_xyz):
     """
     input: vector_xyz = (x,y,z), unit is m
@@ -127,7 +127,7 @@ def coord_sim2det(vector_xyz):
     input: vector_xyz = (x,y,z), unit is m
     return: transformed (x',y',z'), unit is m
     """    
-    return np.array([vector_xyz[0]-119.5, vector_xyz[1], -vector_xyz[2]-steel_height])
+    return np.array([vector_xyz[0]-89.5, vector_xyz[1], -vector_xyz[2]-steel_height])
 def coord_cms2sim(vector_xyz):
     """
     input: vector_xyz = (x,y,z), unit is cm
@@ -872,7 +872,7 @@ class Utils:
         zero_crossings = (signs[0:-2] != signs[1:-1])
         zero_crossings_i = np.where(zero_crossings)[0]
         return [Utils.lin_interp(x, y, zero_crossings_i[0], half),
-                Utils.lin_interp(x, y, zero_crossings_i[1], half)]
+                Utils.lin_interp(x, y, zero_crossings_i[-1], half)]
 
     @staticmethod
     def find_crossing(x, y, height=1):

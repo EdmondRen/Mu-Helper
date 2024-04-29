@@ -23,16 +23,26 @@ class Detector:
 
     scintillator_height_all = 2.6 # 2cm +0.3*2Al case
     cm = 1
-    LayerYLims= [[6547.0,6547.0+scintillator_height_all],
-                 [6629.6,6629.6+scintillator_height_all],
-                 [8547.0,8547.0+scintillator_height_all],
-                 [8629.6,8629.6+scintillator_height_all],
-                 [9132.2,9132.2+scintillator_height_all],
-                 [9214.8,9214.8+scintillator_height_all],
-                 [9297.4,9297.4+scintillator_height_all],
-                 [9380.0,9380.0+scintillator_height_all],
-                 [9462.6,9462.6+scintillator_height_all],
-                 [9545.2,9545.2+scintillator_height_all]]
+    # LayerYLims= [[6547.0,6547.0+scintillator_height_all],
+    #              [6629.6,6629.6+scintillator_height_all],
+    #              [8547.0,8547.0+scintillator_height_all],
+    #              [8629.6,8629.6+scintillator_height_all],
+    #              [9132.2,9132.2+scintillator_height_all],
+    #              [9214.8,9214.8+scintillator_height_all],
+    #              [9297.4,9297.4+scintillator_height_all],
+    #              [9380.0,9380.0+scintillator_height_all],
+    #              [9462.6,9462.6+scintillator_height_all],
+    #              [9545.2,9545.2+scintillator_height_all]]
+      
+    
+    LayerYLims= [[8547.000,8547.000+scintillator_height_all],
+                 [8628.600,8628.600+scintillator_height_all],
+                 [9890.200,9890.200+scintillator_height_all],
+                 [9971.800,9971.800+scintillator_height_all],
+                 [10053.400,10053.400+scintillator_height_all],
+                 [10135.000,10135.000+scintillator_height_all]]    
+        
+    
     
     y_floor = LayerYLims[2][1]
     z_wall = BoxLimits[2][0] + 3 # [cm] add 3 cm to account for wall width
@@ -47,8 +57,9 @@ class Detector:
         self.time_resolution=1e-9 #1ns=1e-9s
         
         self.n_top_layers = 5
-        self.x_edge_length = 99.0
-        self.y_edge_length = 99.0
+        self.x_edge_length = 39.0 # decrease from 99->39 -- Tom
+        self.y_edge_length = 39.0 # decrease from 99->39 -- Tom
+        self.n_modules = 4
 
         self.x_displacement = 70.0
         self.y_displacement = -49.5
@@ -86,8 +97,8 @@ class Detector:
                                     5 + 4*self.layer_spacing + 4.5*self.layer_w_case,
                                     5 + 5*self.layer_spacing + 5.5*self.layer_w_case]
 
-        self.module_x_displacement = [i*(self.module_x_edge_length + 1.0) -0.5 * self.x_edge_length + 0.5*self.module_x_edge_length for i in range(10)]
-        self.module_y_displacement = [i*(self.module_y_edge_length + 1.0) -0.5 * self.y_edge_length + 0.5*self.module_y_edge_length for i in range(10)]
+        self.module_x_displacement = [i*(self.module_x_edge_length + 1.0) -0.5 * self.x_edge_length + 0.5*self.module_x_edge_length for i in range(self.n_modules)]
+        self.module_y_displacement = [i*(self.module_y_edge_length + 1.0) -0.5 * self.y_edge_length + 0.5*self.module_y_edge_length for i in range(self.n_modules)]
         pass
     def xLims(self):
         return self.BoxLimits[0]

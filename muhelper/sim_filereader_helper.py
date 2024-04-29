@@ -825,11 +825,20 @@ def process_llp_filereader_uniform_weight(filename_llp4vec, filename_products, f
 
 
     # Decay volume geometry
+    # 100x100:
+    # surface_height = 85.47
+    # volume_floor_height = surface_height-19
+    # volume_top_height = surface_height+6
+    # full_module_width=100
+    # module_to_CMS = 70
+    # 40x40:
     surface_height = 85.47
-    volume_floor_height = surface_height-19
-    volume_top_height = surface_height+6
-    full_module_width=100
-    module_to_CMS = 70
+    volume_floor_height = surface_height+0.8
+    volume_top_height = surface_height+0.8+12.6
+    full_module_width=40
+    module_to_CMS = 70    
+    
+    
     # The following xyz are all in CMS coordinate!
     cube_vertex_xyz = [full_module_width/2, volume_floor_height, module_to_CMS]
     cube_length_xyz = [full_module_width, volume_top_height-volume_floor_height, full_module_width]
@@ -928,7 +937,7 @@ def process_llp_filereader_uniform_weight(filename_llp4vec, filename_products, f
         vec_Gamma.append(Gamma)
         vec_Pt.append(P_t)
         vec_Pl.append(P_l)
-        vec_Px.append(P_x)`
+        vec_Px.append(P_x)
         vec_Py.append(P_y)        
         vec_eta.append(eta)
         vec_phi.append(phi)
