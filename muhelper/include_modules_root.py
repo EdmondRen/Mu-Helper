@@ -7,13 +7,26 @@ from ROOT import TF1, TH1F,kGreen, TGraphAsymmErrors
 from ROOT import gStyle, gPad, gROOT, TStyle, TPaveStats, TPad
 gStyle.SetOptStat(0);
 gStyle.SetOptFit(1111);
-import root_numpy as npr
-import root_pandas as pdr
-from root_numpy import array2tree
+# import root_numpy as npr
+# import root_pandas as pdr
+# from root_numpy import array2tree
+
+# import ROOT
+# import array
+# import root_numpy
 
 import types
 import numpy as np
+import array
 
+def matrix(root_tmatrix):
+    nrows = root_tmatrix.GetNrows()
+    ncols = root_tmatrix.GetNcols()
+    a = np.zeros((nrows,ncols))
+    for i in range(nrows):
+        for j in range(ncols):
+            a[i][j] = root_tmatrix[i][j]
+    return a
 
 def tcanvas(name="", title="", figsize=(800,600)):
     c=TCanvas(name, title ,figsize[0],figsize[1])
@@ -33,9 +46,11 @@ def thist(x, bins=None, range=None, name="", title=""):
     # matplotlib-style wrapper for ROOT functions:
     def xlabel(self,label):
         self.GetXaxis().SetTitle(label)
+        self.Draw()
     h.xlabel = types.MethodType(xlabel,h)
     def ylabel(self,label):
         self.GetYaxis().SetTitle(label)
+        self.Draw()
     h.ylabel = types.MethodType(ylabel,h)
     
     # Add some utilities
@@ -68,8 +83,8 @@ def thist(x, bins=None, range=None, name="", title=""):
     
     def draw(self):
         c1 = rt.TCanvas()
-        self.Draw()
         c1.Draw()
+        self.Draw()
     h.draw = types.MethodType(draw,h)    
 
             
@@ -82,6 +97,9 @@ def thist(x, bins=None, range=None, name="", title=""):
     
     for xx in x:
         h.Fill(xx)
+        
+        
+    h.Draw()
     return h
 
 def tbins(h):
@@ -146,9 +164,7 @@ def get_info(h):
     return n,ibins,errs
 
 
-import ROOT
-import array
-import root_numpy
+
 def fit_tg(x,y, xerr=None, yerr=None, function="gaus",option="QS", fit_range=None, initial_values=None, bounds=None,
             set_constant=None,
          poisson_yerr=True):
@@ -235,167 +251,167 @@ def fit_tg(x,y, xerr=None, yerr=None, function="gaus",option="QS", fit_range=Non
         option = option + "B" if "B" not in option else option            
 
     fit_res=g1.Fit("f1",option)
-    pcov=root_numpy.matrix(fit_res.GetCovarianceMatrix())
+    pcov=matrix(fit_res.GetCovarianceMatrix())
     popt = [fit_res.GetParams()[i] for i in range(len(pcov))]
     
     return popt,pcov
 
 
-def fitu(array, fit_range=None, n_bins=1000, functions=(root.RooGaussian,),
-        initial_values=((0.0, 1.0, 1.0),),
-        bounds=(((-1e6, 1e6), (0, 1e6), (0, 1e6)), ),
-        set_constant=None,
-        verbosity=0):
-    """Uses the RooFit package to fit a dataset (instead of fitting a histogram)
-    Source: Sasha Zaytsev
+# def fitu(array, fit_range=None, n_bins=1000, functions=(root.RooGaussian,),
+#         initial_values=((0.0, 1.0, 1.0),),
+#         bounds=(((-1e6, 1e6), (0, 1e6), (0, 1e6)), ),
+#         set_constant=None,
+#         verbosity=0):
+#     """Uses the RooFit package to fit a dataset (instead of fitting a histogram)
+#     Source: Sasha Zaytsev
 
-    Parameters
-    ----------
-    array : 1-d array or list
-        input data array to fit
-    fit_range : tuple
-        data range for the fit (x_lower, x_upper)
-    n_bins : int
-        number of points on the x-axis in the output. Does not affect the fit!
-    functions : tuple of RooAbsPdf
-        Roo pdf function.
-        Examples:
-        RooGaussian, RooUniform, RooPolynomial, RooExponential
-    initial_values : tuple of tuples of floats
-        inital values of parameters
-        Example:
-        functions=(root.RooGaussian, root.RooExponential, root.Polynomial), initial_values=((mean, sigma, a), (exp_k, exp_a), (p1, p2, ..., a))
-    bounds : tuple of tuples of tuples of floats
-        min and max allowed parameter values
-        Example:
-        functions=(root.RooGaussian, root.RooExponential), bounds=(((min_mean, max_mean),(min_sig,max_sig),(min_a, max_a)), ((min_k, max_k),(min_a, max_a)))
-    set_constant : tuple of tuples of bools   or   None
-        whether to fix a certain parameter at a constant value.
-        If equals to None, then none of the parameters is fixed
-        Example:
-        functions=(root.RooGaussian, root.RooExponential), set_constant=((fix_mean, fix_sigma), (fix_k))
-    verbosity : int
-        verbosity level (might not work. It's tricky)
-        -2 - print nothing
-        -1 - print errors
-         0 - print errors and fit results
-         1 - print warnings
-         2 - print info
+#     Parameters
+#     ----------
+#     array : 1-d array or list
+#         input data array to fit
+#     fit_range : tuple
+#         data range for the fit (x_lower, x_upper)
+#     n_bins : int
+#         number of points on the x-axis in the output. Does not affect the fit!
+#     functions : tuple of RooAbsPdf
+#         Roo pdf function.
+#         Examples:
+#         RooGaussian, RooUniform, RooPolynomial, RooExponential
+#     initial_values : tuple of tuples of floats
+#         inital values of parameters
+#         Example:
+#         functions=(root.RooGaussian, root.RooExponential, root.Polynomial), initial_values=((mean, sigma, a), (exp_k, exp_a), (p1, p2, ..., a))
+#     bounds : tuple of tuples of tuples of floats
+#         min and max allowed parameter values
+#         Example:
+#         functions=(root.RooGaussian, root.RooExponential), bounds=(((min_mean, max_mean),(min_sig,max_sig),(min_a, max_a)), ((min_k, max_k),(min_a, max_a)))
+#     set_constant : tuple of tuples of bools   or   None
+#         whether to fix a certain parameter at a constant value.
+#         If equals to None, then none of the parameters is fixed
+#         Example:
+#         functions=(root.RooGaussian, root.RooExponential), set_constant=((fix_mean, fix_sigma), (fix_k))
+#     verbosity : int
+#         verbosity level (might not work. It's tricky)
+#         -2 - print nothing
+#         -1 - print errors
+#          0 - print errors and fit results
+#          1 - print warnings
+#          2 - print info
 
-    Returns 
-    -------
-    x, y, param_values, param_errors
-    x : array
-        bin centers
-    y : array
-        fit function values
-    param_values : tuple of tuples
-        values of fitted parameters. Has the same shape as 'initial_values' arg
-    param_values : tuple of tuples
-        errors of fitted parameters. Has the same shape as 'initial_values' arg
-    """
+#     Returns 
+#     -------
+#     x, y, param_values, param_errors
+#     x : array
+#         bin centers
+#     y : array
+#         fit function values
+#     param_values : tuple of tuples
+#         values of fitted parameters. Has the same shape as 'initial_values' arg
+#     param_values : tuple of tuples
+#         errors of fitted parameters. Has the same shape as 'initial_values' arg
+#     """
 
-    # trying to suppress output
-    if verbosity < -1:
-        root.RooMsgService.instance().setGlobalKillBelow(root.RooFit.FATAL)
-    if verbosity == -1 or verbosity == 0:
-        root.RooMsgService.instance().setGlobalKillBelow(root.RooFit.ERROR)
-    if verbosity == 1:
-        root.RooMsgService.instance().setGlobalKillBelow(root.RooFit.WARNING)
-    if verbosity >= 2:
-        root.RooMsgService.instance().setGlobalKillBelow(root.RooFit.INFO)
+#     # trying to suppress output
+#     if verbosity < -1:
+#         root.RooMsgService.instance().setGlobalKillBelow(root.RooFit.FATAL)
+#     if verbosity == -1 or verbosity == 0:
+#         root.RooMsgService.instance().setGlobalKillBelow(root.RooFit.ERROR)
+#     if verbosity == 1:
+#         root.RooMsgService.instance().setGlobalKillBelow(root.RooFit.WARNING)
+#     if verbosity >= 2:
+#         root.RooMsgService.instance().setGlobalKillBelow(root.RooFit.INFO)
 
-    if type(array)==list:
-        array = np.array(array)
+#     if type(array)==list:
+#         array = np.array(array)
 
-    if fit_range is None:
-        fit_range = (np.min(array), np.max(array))
+#     if fit_range is None:
+#         fit_range = (np.min(array), np.max(array))
 
-    # create a tree with one branch
-    tree = array2tree(np.array(array, dtype=[('data', np.float64)]))
+#     # create a tree with one branch
+#     tree = array2tree(np.array(array, dtype=[('data', np.float64)]))
 
-    data_var = root.RooRealVar('data', 'data', fit_range[0], fit_range[1])
-    data_arg_set = root.RooArgSet(data_var)
+#     data_var = root.RooRealVar('data', 'data', fit_range[0], fit_range[1])
+#     data_arg_set = root.RooArgSet(data_var)
 
-    dataset = root.RooDataSet('dataset', 'dataset', tree, data_arg_set)
+#     dataset = root.RooDataSet('dataset', 'dataset', tree, data_arg_set)
 
-    parameters = []
-    roo_functions = []
-    amplitudes = []
+#     parameters = []
+#     roo_functions = []
+#     amplitudes = []
 
-    # iterating through the functions
-    func_names = []
-    for i,f in enumerate(functions):
-        func_name = f.__name__
-        # remove the Roo prefix
-        if len(func_name)>3 and func_name[:3]=='Roo':
-            func_name = func_name[3:]
+#     # iterating through the functions
+#     func_names = []
+#     for i,f in enumerate(functions):
+#         func_name = f.__name__
+#         # remove the Roo prefix
+#         if len(func_name)>3 and func_name[:3]=='Roo':
+#             func_name = func_name[3:]
 
-        base_func_name = func_name
-        k = 2
-        while func_name in func_names:
-            func_name = '%s%i'%(base_func_name, k)
-            k+=1
+#         base_func_name = func_name
+#         k = 2
+#         while func_name in func_names:
+#             func_name = '%s%i'%(base_func_name, k)
+#             k+=1
 
-        func_names.append(func_name)
+#         func_names.append(func_name)
 
-        # creating function parameters
-        func_parameters = []
-        for j,initial_value in enumerate(initial_values[i][:-1]):
-            name = '%s_p%i'%(func_name, j)
-            parameter = root.RooRealVar(name, name, initial_value, *bounds[i][j])
-            if not(set_constant is None) and set_constant[i][j]:
-                parameter.setConstant(True)
-            func_parameters.append(parameter)
-        parameters.append(func_parameters)
+#         # creating function parameters
+#         func_parameters = []
+#         for j,initial_value in enumerate(initial_values[i][:-1]):
+#             name = '%s_p%i'%(func_name, j)
+#             parameter = root.RooRealVar(name, name, initial_value, *bounds[i][j])
+#             if not(set_constant is None) and set_constant[i][j]:
+#                 parameter.setConstant(True)
+#             func_parameters.append(parameter)
+#         parameters.append(func_parameters)
 
-        # creating function amplitude
-        name = '%s_a'%(func_name)
-        amplitudes.append(root.RooRealVar(name, name, initial_values[i][-1], *bounds[i][-1]))
+#         # creating function amplitude
+#         name = '%s_a'%(func_name)
+#         amplitudes.append(root.RooRealVar(name, name, initial_values[i][-1], *bounds[i][-1]))
 
-        if func_name=='Polynomial':
-            roo_functions.append(f(func_name, func_name, data_var, root.RooArgList(*func_parameters)))
-        elif func_name=='Uniform' or len(func_parameters)==0:
-            roo_functions.append(f(func_name, func_name, data_arg_set))
-        else:
-            roo_functions.append(f(func_name, func_name, data_var, *func_parameters))
+#         if func_name=='Polynomial':
+#             roo_functions.append(f(func_name, func_name, data_var, root.RooArgList(*func_parameters)))
+#         elif func_name=='Uniform' or len(func_parameters)==0:
+#             roo_functions.append(f(func_name, func_name, data_arg_set))
+#         else:
+#             roo_functions.append(f(func_name, func_name, data_var, *func_parameters))
 
-    function_list = root.RooArgList(*roo_functions)
-    amplitude_list = root.RooArgList(*amplitudes)
-    pdf = root.RooAddPdf('pdf', 'pdf', function_list, amplitude_list)
+#     function_list = root.RooArgList(*roo_functions)
+#     amplitude_list = root.RooArgList(*amplitudes)
+#     pdf = root.RooAddPdf('pdf', 'pdf', function_list, amplitude_list)
 
-    # fitting
-    fit_results = pdf.fitTo(dataset, root.RooFit.Save(), root.RooFit.Range(*fit_range), root.RooFit.PrintLevel(verbosity-1))
-    if fit_results.status()!=0:
-        if verbosity>=-1:
-            print('----- FIT STATUS != 0 -----')
-    if verbosity>=0:
-        fit_results.Print()
+#     # fitting
+#     fit_results = pdf.fitTo(dataset, root.RooFit.Save(), root.RooFit.Range(*fit_range), root.RooFit.PrintLevel(verbosity-1))
+#     if fit_results.status()!=0:
+#         if verbosity>=-1:
+#             print('----- FIT STATUS != 0 -----')
+#     if verbosity>=0:
+#         fit_results.Print()
 
-    tf_parameters = []
-    param_values = []
-    param_errors = []
+#     tf_parameters = []
+#     param_values = []
+#     param_errors = []
 
-    for i,params in enumerate(parameters):
-        tf_parameters += params
-        param_values.append([p.getVal() for p in params] + [amplitudes[i].getVal()])
-        param_errors.append([p.getError() for p in params] + [amplitudes[i].getError()])
+#     for i,params in enumerate(parameters):
+#         tf_parameters += params
+#         param_values.append([p.getVal() for p in params] + [amplitudes[i].getVal()])
+#         param_errors.append([p.getError() for p in params] + [amplitudes[i].getError()])
 
-    tf_parameters += amplitudes
+#     tf_parameters += amplitudes
 
-    tf = pdf.asTF(root.RooArgList(data_var), root.RooArgList(*tf_parameters), data_arg_set)
-    a = 0
-    for amplitude in amplitudes:
-        a += amplitude.getVal()
+#     tf = pdf.asTF(root.RooArgList(data_var), root.RooArgList(*tf_parameters), data_arg_set)
+#     a = 0
+#     for amplitude in amplitudes:
+#         a += amplitude.getVal()
 
-    bin_w = (fit_range[1] - fit_range[0])/n_bins
-    x = np.linspace(fit_range[0]+bin_w/2, fit_range[1]-bin_w/2, n_bins)
-    y = np.array([a*tf.Eval(ix) for ix in x])*bin_w
+#     bin_w = (fit_range[1] - fit_range[0])/n_bins
+#     x = np.linspace(fit_range[0]+bin_w/2, fit_range[1]-bin_w/2, n_bins)
+#     y = np.array([a*tf.Eval(ix) for ix in x])*bin_w
 
-    return x, y, param_values, param_errors  
+#     return x, y, param_values, param_errors  
 
-if 'Fit' in globals():
-    Fit.fitu=staticmethod(fitu)
+# if 'Fit' in globals():
+#     Fit.fitu=staticmethod(fitu)
     
     
 import ctypes

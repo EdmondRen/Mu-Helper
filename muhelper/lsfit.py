@@ -256,7 +256,10 @@ def get_km(filename, results_fit = None, tree_name="integral_tree", nevents=-1):
         results_fit["par_km_pdgids"].append(par_km_pdgids)
         
     for key in results_fit:
-        results_fit[key]=np.array(results_fit[key])
+        try:
+            results_fit[key]=np.array(results_fit[key])
+        except:
+            continue
         
     return results_fit
 

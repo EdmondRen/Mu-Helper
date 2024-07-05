@@ -68,7 +68,7 @@ def ttext(x,y,info_to_display,mono=True,**kwargs):
         text(x,y,info_to_display,transform=gca().transAxes,**kwargs)
 
 
-def plt_config(family="serif",usetex=False,math_fontfamily=None, fontsize_multi=1):
+def plt_config(family=None,usetex=False,math_fontfamily=None, fontsize_multi=1):
     """
     Figure presets. Changing the default rcParams.
     
@@ -93,7 +93,8 @@ def plt_config(family="serif",usetex=False,math_fontfamily=None, fontsize_multi=
         plt.rcParams['font.family'] = 'Liberation Sans'
         plt.rcParams['mathtext.fontset'] = 'dejavusans' 
     else:
-        plt.rcParams['font.family'] = family
+        pass
+        # plt.rcParams['font.family'] = family
     
     if type(math_fontfamily) is str:
         plt.rcParams['mathtext.fontset'] = math_fontfamily  

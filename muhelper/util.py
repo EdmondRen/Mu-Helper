@@ -7,6 +7,7 @@ import ast
 import copy as cp
 from glob import glob
 import types
+import scipy.ndimage
 from tqdm import tqdm
 from types import ModuleType, FunctionType
 from gc import get_referents
@@ -108,7 +109,7 @@ def coord_det2sim(vector_xyz):
     input: vector_xyz = (x,y,z), unit is m
     return: transformed (x',y',z'), unit is m
     """
-    return np.array([vector_xyz[0]+119.5, vector_xyz[1], -vector_xyz[2]-steel_height])
+    return np.array([vector_xyz[0]+89.5, vector_xyz[1], -vector_xyz[2]-steel_height])
 def coord_sim2cms(vector_xyz):
     """
     input: vector_xyz = (x,y,z), unit is m
@@ -127,7 +128,7 @@ def coord_sim2det(vector_xyz):
     input: vector_xyz = (x,y,z), unit is m
     return: transformed (x',y',z'), unit is m
     """    
-    return np.array([vector_xyz[0]-119.5, vector_xyz[1], -vector_xyz[2]-steel_height])
+    return np.array([vector_xyz[0]-89.5, vector_xyz[1], -vector_xyz[2]-steel_height])
 def coord_cms2sim(vector_xyz):
     """
     input: vector_xyz = (x,y,z), unit is cm
@@ -860,19 +861,22 @@ class Utils:
         return x[i] + (x[i+1] - x[i]) * ((half - y[i]) / (y[i+1] - y[i]))
 
     @staticmethod
-    def fwhm(x, y, height=0.5):
+    def fwhm(x, y, height=0.5, sigma=0):
         """
         Find the interval in x corrsponding to full width half maximum
         x: list of x values
         y: list of y values
         height: default to 0.5 (half maximum)
+        sigma: use gaussian filter to smooth the data, in unit of bins
         """
+        if sigma>0:
+            y = scipy.ndimage.gaussian_filter(y, sigma=sigma)
         half = max(y)*height
         signs = np.sign(np.add(y, -half))
         zero_crossings = (signs[0:-2] != signs[1:-1])
         zero_crossings_i = np.where(zero_crossings)[0]
         return [Utils.lin_interp(x, y, zero_crossings_i[0], half),
-                Utils.lin_interp(x, y, zero_crossings_i[1], half)]
+                Utils.lin_interp(x, y, zero_crossings_i[-1], half)]
 
     @staticmethod
     def find_crossing(x, y, height=1):
