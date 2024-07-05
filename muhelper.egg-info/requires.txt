@@ -1,0 +1,7 @@
+iminuit
+joblib
+numpy
+scikit-learn
+scipy
+tqdm
+uncertainties
