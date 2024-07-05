@@ -768,42 +768,6 @@ def get_dt(times1, times2=None, use_which="nearest"):
 
 
 
-def get_dt(times1, times2=None, use_which="nearest"):
-    """
-    calculate times2-times1
-
-    use_which: "before","nearest","after"
-    """
-
-    if times2 is None:
-        dt_after = np.diff(times1, append=np.inf)
-        dt_before = -np.diff(times1, prepend=-np.inf)
-    else:
-        times2 = np.sort(times2)
-        indeces = np.searchsorted(times2, times1)
-        dt_after = np.concatenate((times2, [np.inf]))[indeces] - times1
-        dt_before = np.concatenate(([-np.inf], times2))[indeces] - times1
-
-    dt_after[np.isinf(dt_after)] = np.inf
-    dt_before[np.isinf(dt_before)] = -np.inf
-
-    if np.any(dt_after<0) or np.any(dt_before>0):
-        print('In get_dt: ERROR 1. Wrong dt sign')
-
-    if use_which=="nearest":
-        use_before = dt_after>-dt_before
-
-        dt = np.zeros_like(dt_after)
-        dt[use_before] = dt_before[use_before]
-        dt[~use_before] = dt_after[~use_before]
-    elif use_which=="before":
-        dt = dt_before
-    elif use_which=="after":
-        dt = dt_after        
-
-    ## revert the meaning of dt here
-    return dt
-
 
 
 class ARS():
