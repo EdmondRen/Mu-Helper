@@ -2,10 +2,11 @@ from pylab import *
 import numpy as np
 import scipy as sp
 import joblib
-import event
+# import event
 from tqdm import tqdm
 
-import util
+from . import util
+from . import visualization as vis # This is the original visualization code. still partially useful
 
 
 class visualization:    
@@ -19,7 +20,7 @@ class visualization:
         """
         # Prepare the canvas
         if fig is None:
-            fig,axs=subplots(2,2,figsize=(12,9))
+            fig,axs=subplots(2,2,figsize=(12,6))
             axs=axs.flatten().tolist()
         else:
             axs=fig.axes    
@@ -114,127 +115,163 @@ class visualization:
             handles, labels = axs[0].get_legend_handles_labels()
             labels_unique, labels_inds = np.unique(labels, return_index=True)
             handles_unique=[handles[i] for i in labels_inds]
-            fig.legend(handles_unique, labels_unique, loc=(0.65,0.1),framealpha=1,ncol=4, fontsize=9)        
+            fig.legend(handles_unique, labels_unique, loc=(0.52,0.1),framealpha=1,ncol=4, fontsize=9)        
         axs[3].axis("off")
         return fig
     
-class processing:
+
+    
+       
+
     @staticmethod
-    def process_results(data_recon, Tree_truth, Tree_digi, cut_track_TrackNHitsMin=4):
-        cut_track_TrackNHitsMin = 4
-        truth = []
-        truth_reconstructable = []
+    def drawdet(direction, axis=None, layer_height_vis=0.2, alpha=0.1, set_lim=False, unit="m"):
+
+        # Manually define the corner of all layers
+        det_x_width=39
+        det_z_width=39
+        det_z_height = 16
+        det_x_offset = 0
+        det_y_offset = 85.47
+        det_z_offset = 70
+        layer_gap=0.8
+        air_gap = 12.6
+        wall_height = layer_gap+air_gap
         
-        data = {}
-        data["Entry"]=[]
-        data["Event_ndigi"]=[]
-        data["Event_ntrack_recon"]=[]
-        data["Event_ntrack_reconstructible"]=[]
-        data["Event_nvertex_recon"]=[]
-        data["Vertex_ntrack_reconstructible"]=[]
-        data["Vertex_ntrack_reconstructed"]=[]
-        data[f"Vertex_truth"]=[]
-        data[f"Vertex_recon"]=[]
-        data["Vertex_counts"]=[]
-        data["Vertex_unc"] = []
-        data["Vertex_cov"] = []
-        data["Vertex_chi2"]=[]
-        data["Vertex_chi2_prob"]=[]
+        layers_xyz_cms={
+            0: [[-det_x_width/2, 0, det_z_offset-layer_gap],  [det_x_width/2,  wall_height, det_z_offset-layer_gap]],
+            1: [[-det_x_width/2, 0, det_z_offset],  [det_x_width/2,  wall_height, det_z_offset]],
+            2: [[-det_x_width/2, 0, det_z_offset],          [det_x_width/2, 0, det_z_offset+det_x_width]],
+            3: [[-det_x_width/2, layer_gap, det_z_offset],[det_x_width/2, layer_gap, det_z_offset+det_x_width]],
 
-        # for i in tqdm(range( Tree.GetEntries())):
-        entry_range = [0,Tree_truth.GetEntries()]
-        for i in tqdm(range(*entry_range)):
+            4: [[-det_x_width/2, layer_gap*1+air_gap, det_z_offset],[det_x_width/2, layer_gap*1+air_gap, det_z_offset+det_z_width]],
+            5: [[-det_x_width/2, layer_gap*2+air_gap, det_z_offset],[det_x_width/2, layer_gap*2+air_gap, det_z_offset+det_z_width]],
+            6: [[-det_x_width/2, layer_gap*3+air_gap, det_z_offset],[det_x_width/2, layer_gap*3+air_gap, det_z_offset+det_z_width]],
+            7: [[-det_x_width/2, layer_gap*4+air_gap, det_z_offset],[det_x_width/2, layer_gap*4+air_gap, det_z_offset+det_z_width]],
 
-            Tree_digi.GetEntry(i)
-            Tree_truth.GetEntry(i)
-            tracks = data_recon["tracks"][i]
-            vertices = data_recon["vertices"][i]
+            8: [[-det_x_width/2, air_gap+layer_gap-9, det_z_offset+det_z_width],  [det_x_width/2,  air_gap+layer_gap, det_z_offset+det_z_width]],
+            9: [[-det_x_width/2, air_gap+layer_gap-9, det_z_offset+det_z_width+layer_gap*1],  [det_x_width/2,  air_gap+layer_gap, det_z_offset+det_z_width+layer_gap*1]],
+            10: [[-det_x_width/2, air_gap+layer_gap-9, det_z_offset+det_z_width+layer_gap*2],  [det_x_width/2,  air_gap+layer_gap, det_z_offset+det_z_width+layer_gap*2]],
+            11: [[-det_x_width/2, air_gap+layer_gap-9, det_z_offset+det_z_width+layer_gap*3],  [det_x_width/2,  air_gap+layer_gap, det_z_offset+det_z_width+layer_gap*3]],
+
+        }
+        
+        # gaps_xyz_cms={
+        #     1: [[-det_x_width/2]],
+        # }
+        for key in layers_xyz_cms:
+            layers_xyz_cms[key][0][1]+=det_y_offset
+            layers_xyz_cms[key][1][1]+=det_y_offset    
+
+
+        if axis is None: axis=plt.gca()
+
+        maps={0:[2,1], 1:[0,1], 2:[2,0]}
+        inds= maps[direction]
+        verts=[] # vertices of polygons
+        map_unit={"m":1, "cm":100, "mm": 1000}
+
+        for i in layers_xyz_cms:
+            det_corner1, det_corner2 = layers_xyz_cms[i]
+            layerX = np.array([det_corner1[inds[0]],
+                      det_corner1[inds[0]],
+                      det_corner2[inds[0]],
+                      det_corner2[inds[0]]], dtype=float)
+
+            layerY = np.array([det_corner1[inds[1]],
+                      det_corner2[inds[1]],
+                      det_corner2[inds[1]],
+                      det_corner1[inds[1]]], dtype=float)
+
+            if det_corner1[inds[0]]==det_corner2[inds[0]]: layerX+=np.array([0,0, layer_height_vis,layer_height_vis])
+            if det_corner1[inds[1]]==det_corner2[inds[1]]: layerY+=np.array([0,layer_height_vis,layer_height_vis,0])
+            # print(layerX,layerY)
+            if i==0: lim_x,lim_y = [min(layerX),max(layerX)], [min(layerY),max(layerY)]
+            lim_x = [min(lim_x[0], min(layerX)), max(lim_x[1], max(layerX))]
+            lim_y = [min(lim_y[0], min(layerY)), max(lim_y[1], max(layerY))]
+            verts.append(np.transpose([layerX, layerY])*map_unit[unit])         
+
+        col = mpl.collections.PolyCollection(verts, alpha=alpha)
+        axis.add_collection(col)
+        if set_lim:
+            axis.set_xlim((lim_x[0]-0.5)*map_unit[unit], (lim_x[1]+0.5)*map_unit[unit])
+            axis.set_ylim((lim_y[0]-0.5)*map_unit[unit], (lim_y[1]+0.5)*map_unit[unit])
+
+    @staticmethod
+    def plot_det(fig=None, layer_height_vis=0.2, alpha=0.1, set_lim=False, unit="cm"):
+        """
+        drawdet_all(set_lim=True)
+        """
+        if fig is None:
+            fig,axs=subplots(2,2,figsize=(12,6))
+            axs=axs.flatten().tolist()
+        else:
+            axs=fig.axes     
+
+        for direction in range(3):
+            visualization.drawdet(direction, axis=axs[direction], layer_height_vis=layer_height_vis, alpha=alpha, set_lim=set_lim, unit=unit)
             
-            # Calculate reconstrucible tracks/vertices
-            ids=np.array(util.c2list(Tree_digi.Digi_track_id))
-            ys = np.array(util.c2list(Tree_digi.Digi_y))
-            zs = np.array(util.c2list(Tree_digi.Digi_z))
-            n_reconstructible=0
-            n_reconstructible2=0
-            for g4track_id in range(0,200):
-                mask = (ids==g4track_id) & (ys>8500) & (zs>7000)
-                if len(np.unique(ys[mask]))>=cut_track_TrackNHitsMin:
-                    n_reconstructible+=1
-            for g4track_id in np.unique(ids):
-                if len(np.unique(ys[ids==g4track_id]))>=cut_track_TrackNHitsMin:
-                    n_reconstructible2+=1     
-                    
-            n_vertex_recon=len(vertices)
-                    
-            data["Entry"].append(i)
-            data["Event_ndigi"].append(Tree_digi.Digi_x.size())
-            data["Event_ntrack_recon"].append(len(tracks))
-            data["Event_ntrack_reconstructible"].append(n_reconstructible2)
-            data["Event_nvertex_recon"].append(n_vertex_recon)                
-            data["Vertex_ntrack_reconstructible"].append(n_reconstructible)
-                
+        return fig
+    
+    
+    
+
+class PlotEvent:
+    import ROOT
+    def __init__(self, filename_digis, filename_recons, verbose=False):
+        self.filename_digis = filename_digis
+        self.filename_recons = filename_recons
+        self.truth_file = None
+        self.truth_filename = None
+        self.recon_file = None
+        self.recon_filename = None
+        self.verbose=verbose
         
-            # Vertex========================================================
-            if n_vertex_recon==0:
-                Vertex_truth = [-99999,-99999,-99999,-99999]
-                Vertex_truth_direction = [1,0,0]
-                Vertex_recon = [99999,99999,99999,99999]
-                Vertex_recon_unc = [-9990,-9990,-9990,-9990]
-                Vertex_chi2 = -1
-                Vertex_chi2_prob = -1
-                Vertex_ntrack = -1
-                Vertex_ntrack_reconstructible = -1
-                Vertex_tracks_ndigi = [-1]
-                Vertex_tracks_purity  = [-1]
-                Vertex_tracks_g4ids  = [-1]
-                Vertex_tracks_pdgids  = [-1]
-                Vertex_tracks_chi2  = [-1]
-                Vertex_tracks_chi2_prob  = [-1]
-                
-            else:
-                Vertex_truth = [Tree_truth.GenParticle_y.at(1)*0.1, -Tree_truth.GenParticle_z.at(1)*0.1 + 8547, Tree_truth.GenParticle_x.at(1)*0.1, 0]
-                
-                # Select 1 vertex
-                recon_truth_dist = []
-                for iv in range(n_vertex_recon):
-                    vrecon = np.array(vertices[iv][:4])
-                    recon_truth_dist.append(np.linalg.norm((vrecon - Vertex_truth)[:3]))
-                iv1 = int(np.argmin(recon_truth_dist)) # Select the one closest to truth
-                # iv2 = int(np.argmax(recon_ntracks))    # Select the one with most tracks
-                
-                
-                # Select the vertex closest to truth
-                iv = iv1
-
-
-                # Get recon info
-                Vertex_recon =  np.array(vertices[iv][:4])
-                Vertex_ntrack = len(vertices[iv].tracks)
-                Vertex_recon_cov = vertices[iv].cov
-                Vertex_recon_unc = np.sqrt(np.diag(vertices[iv].cov))
-                Vertex_chi2 = vertices[iv].chi2
-                Vertex_chi2_prob = 1-sp.stats.chi2.cdf(vertices[iv].chi2, 3*Vertex_ntrack-4)
-                
-                    
-                    
-            data["Vertex_ntrack_reconstructed"].append(Vertex_ntrack)
-            data["Vertex_truth"].append(Vertex_truth)
-            data["Vertex_recon"].append(Vertex_recon)
-            # data["Vertex_cov"].append(Vertex_recon_cov)
-            data["Vertex_unc"].append(Vertex_recon_unc)
-            data["Vertex_counts"].append(n_vertex_recon)
-            data["Vertex_chi2"].append(Vertex_chi2)
-            data["Vertex_chi2_prob"].append(Vertex_chi2_prob)
-
-
-        for key in data:
-            data[key] = np.array(data[key])
-
-        data["Vertex_residual_xyzt"] = data["Vertex_truth"]-data["Vertex_recon"]
+    def get_tree(self, tfile):
+        Tree = tfile.Get(tfile.GetListOfKeys()[0].GetName())
+        def keys(Tree):
+            branch_list = [Tree.GetListOfBranches()[i].GetName() for i in range(len(Tree.GetListOfBranches()))]
+            return branch_list
+        Tree.keys = types.MethodType(keys,Tree) 
         
-        data["Vertex_residual_r"] = np.linalg.norm(data["Vertex_residual_xyzt"][:,:3].tolist(),axis=1) # Total position residual
-        Vertices_truth_direction_unit = np.array([np.array(Vertex_truth[:3])/np.linalg.norm(Vertex_truth[:3]) for Vertex_truth in data["Vertex_truth"]])
-        data["Vertex_residual_axial"]  = np.sum((data["Vertex_residual_xyzt"][:, :3]*Vertices_truth_direction_unit).tolist(), axis=1)
-        data["Vertex_residual_trans"]  = np.sqrt(data["Vertex_residual_r"]**2 - data["Vertex_residual_axial"]**2)
+        return Tree
         
-        return data
+    def set_event_list(self,runs, entries):
+        self.runs=runs
+        self.entries=entries
+        if len(self.runs)!=self.entries:
+            raise("Lenght not equal")
+            
+    def plot_i(self, i):
+        return self.plot(self.runs[i], self.entries[i])
+
+
+
+    def plot(self, run, entry, fig=None):
+        filename_truth = self.filename_digis[run]
+        filename_recon = self.filename_recons[run]    
+        if not (filename_truth==self.truth_filename and filename_recon==self.recon_filename \
+               and self.recon_file is not None):
+            # Open truth file (just a wrapper of ROOT.TFile...)
+            self.truth_filename = filename_truth
+            self.recon_filename = filename_recon
+            tfile = PlotEvent.ROOT.TFile.Open(filename_truth)
+            self.truth_file  = tfile.Get(tfile.GetListOfKeys()[0].GetName())
+            if self.verbose:
+                print("Reading reconstruction file", end="")
+            self.recon_file  = joblib.load(filename_recon, mmap_mode="r")
+            if self.verbose:
+                print("   reconstruction file loaded")            
+            
+        # Get truth information
+        self.truth_file.GetEntry(entry)
+        # Get recon information
+        hits, tracks, vertices = self.recon_file["hits"][entry], self.recon_file["tracks"][entry], self.recon_file["vertices"][entry]  
+        
+        if fig is None:
+            fig,axs=plt.subplots(2,2,figsize=(14,6))
+        fig = vis.plot_truth_new(self.truth_file,fig=fig, disp_det_view=False, disp_filereader_vertex=False, disp_first_hit=False,make_legend=False);
+        fig = visualization.plot_recon(hits, tracks, vertices, fig=fig, make_legend=True)
+        fig = visualization.plot_det(fig=fig,set_lim=True, unit="cm")
+        axs = fig.axes    
+        
+        return fig, axs    

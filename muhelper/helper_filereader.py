@@ -4,7 +4,38 @@ import pylorentz
 import random
 from pathlib import Path
 
-import util
+from . import util
+
+
+
+def make_event(i, particles, vertex=None):
+    """
+    INPUT:
+        i: event number
+        particles: list of particles
+            each particle is [PDG, x, y, z, px, py, pz, t]
+        vertex: none or vertex
+            vertex is [PDG, x, y, z, px, py, pz, t]
+            
+    NOTE:
+        unit is [mm], [MeV]
+    RETURN:
+        formated string of this event
+    """
+    
+    vertex = [0,0,0,0,0,0,0,0] if vertex is None else vertex # [PID, x,y,z, px,py,pz, t]
+    
+    evt= f'E {i} {vertex[0]}  {vertex[1]}  {vertex[2]}  {vertex[3]}  {vertex[4]}  {vertex[5]}  {vertex[6]}  {vertex[7]}\n'
+    for p in particles:
+        evt+=f'P {p[0]} {p[1]} {p[2]} {p[3]} {p[4]} {p[5]} {p[6]} {p[7]}\n'
+        
+    return evt
+
+def open_file(filename, nevents):
+    f = open(filename_filereader, "w")
+    f.write(f"# nevents {nevents}\n\n")
+    return f
+
 
 
 class unit:
@@ -824,19 +855,25 @@ def process_llp_filereader_uniform_weight(filename_llp4vec, filename_products, f
     random.seed(rand_seed)
 
 
-    # Decay volume geometry
-    # 100x100:
+    ## Decay volume geometry
+    ## 100x100:
     # surface_height = 85.47
     # volume_floor_height = surface_height-19
     # volume_top_height = surface_height+6
-    # full_module_width=100
+    # full_module_width=99
     # module_to_CMS = 70
-    # 40x40:
+    ## 40x40:
+    # surface_height = 85.47
+    # volume_floor_height = surface_height+0.8
+    # volume_top_height = surface_height+0.8+12.6
+    # full_module_width=39
+    # module_to_CMS = 70    
+    ## 40x40, 6 layers:
     surface_height = 85.47
-    volume_floor_height = surface_height+0.8
-    volume_top_height = surface_height+0.8+12.6
-    full_module_width=40
-    module_to_CMS = 70    
+    volume_floor_height = surface_height+0.83
+    volume_top_height = surface_height+0.83+10.968
+    full_module_width=39
+    module_to_CMS = 70        
     
     
     # The following xyz are all in CMS coordinate!

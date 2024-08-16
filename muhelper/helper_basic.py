@@ -7,10 +7,14 @@ import time
 from importlib import reload
 from tqdm import tqdm
 
+import functools
+print = functools.partial(print, flush=True)
+
 # Other libraries
 import scipy
 import scipy.optimize
 import numpy as np
+import joblib, pickle
 
 from pylab import *
 
@@ -886,3 +890,88 @@ class ARS():
         np.exp(self.u[i]))) / self.hprime[i]
 
         return [xt,i]
+    
+    
+    
+    
+def append_dicts(dict1,dict2):
+    dict_combined=dict()
+    for key in dict1:
+        if key in dict2:
+            dict_combined[key]=np.concatenate((dict1[key],dict2[key]))
+    return dict_combined
+
+    
+def load_all(filelist, loader=None, datatype="dict", verbose=True, list_append_axis=0):
+    """ A function that can load from multiple files and combine the results.
+    Supported file format:
+    Supported content format:
+    
+    INPUT:
+    ---
+    filelist: list
+        A list of files to be loaded
+    loader: str or function
+        Choose one of {"npy", "joblib", "pickle"}, or provide your custom load function for one file.
+        Default is automatically detecting based on filename.
+    datatype: str
+        One of {"dict", "list"}
+        Default is dict
+    verbose: bool
+        Print out progress. 
+        Default is true
+    list_append_axis: int
+        The axis to join the list if the datatype is "list"
+        Default is 0, concatenate data from all files on axis 0.
+    """
+    import types
+    
+    if len(filelist)==0:
+        return
+    loader=filelist[0].split(".")[-1] if loader is None else loader
+    
+    # Make the load function depending on file format
+    if loader=="npy":
+        load = lambda fname: np.load(fname, allow_pickle=True).item()
+    elif loader=="joblib":
+        load = lambda fname: joblib.load(fname)
+    elif isinstance(loader, types.FunctionType):
+        load = loader
+    else:
+        raise Exception("Sorry, could not detect the file format. Please specify one of the following [npy, joblib], or a lambda function")
+    
+    data = load(filelist[0])
+    datatype = type(data).__name__ if datatype is None else datatype
+    for i, fname in enumerate(filelist[1:]):
+        if verbose:
+            print(f"{i+2}/{len(filelist)}, {fname}", end="\r")
+        data_temp = load(fname)
+        if datatype=="dict":
+            data = append_dicts(data, data_temp)
+        elif datatype=="list":
+            data = np.concatenate((data,data_temp),axis=list_append_axis)
+    return data    
+
+
+
+
+def plot_angular_distribution(directions=None, angles=None, ref=[0,0,1], bins=100, range=(0, 3.1415926)):
+    """Plot the angular distribution
+    """
+    def angel(v1,v2):
+        mag1 = np.linalg.norm(v1)
+        mag2 = np.linalg.norm(v2)
+        opening_angle = np.arccos(np.dot(v1, v2)/( mag1*mag2 ))
+        return opening_angle
+    
+    if directions is None and angles is None:
+        raise Exception("Either directions or angles needs to be given")
+    
+    if directions is not None:
+        angels = [angel(v1, ref) for v1 in directions]
+        
+    n,ibins=np.histogram(angels, bins=bins, range=range)
+    weights=(np.cos(ibins[:-1])-np.cos(ibins[1:]))*2*np.pi
+    stairs(n/weights, ibins)
+    
+    return n/weights, ibins

@@ -11,8 +11,8 @@ from matplotlib.patches import FancyArrowPatch
 from matplotlib import collections, colors, transforms
 
 
-from detector import Detector
-import physics,cutflow,util, detector, event
+from .detector import Detector
+from . import physics,util, detector, event
 
 
 namemap_pdg = { \
@@ -58,7 +58,19 @@ colormap_pdg = { \
             -13: "c",
             11: "g",
             -11: "m",
-            211: "b"
+            22: "C0",
+            211: "C1",
+            -211:"C1",
+            130: "C2",
+            311: "C2",
+            -311:"C2", 
+            321: "C3",
+            -321:"C3",                 
+           2112: "C4",
+           -2112:"C4",
+           2212: "C5",
+           -2212:"C5",
+                
 }
 
 
@@ -514,7 +526,7 @@ def drawdet_xy(use_cms=False, axis=None, layer_height_vis=0.2, alpha=0.1):
    
 
 
-cut=cutflow.sample_space("")
+cut=None#cutflow.sample_space("")
 
 def pdg_color(pdg):
     if pdg in colormap_pdg.keys():

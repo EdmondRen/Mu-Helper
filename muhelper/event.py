@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from array import array
 
-import physics
-import visualization
-from detector import Detector
-import util
+from . import physics
+from . import visualization
+from .detector import Detector
+from . import util
 
 class Event:
     """

@@ -9,32 +9,27 @@ import numpy as np
 import scipy as sp
 
 class Detector:
+    # Use cm as unit
+    cm = 1      
 
-    BoxLimits = [  [-5000.0, 5000.0],  [6000.0 + 547, 8917.0 + 547],  [7000.0, 17000.0]    ]
- 
-    WallLimits = [ BoxLimits[0], [BoxLimits[1][0],BoxLimits[1][0] + 2000.0 ] ] # [x,y] [cm,cm]
+    OutBoxLimits =[  [-1950.0, 1950.0],  [8547.0, 8547.0+1754.200],  [7000.0, 7000.0+3900]    ]
+    BoxMargin = 50
+    BoxLimits   = [  [-1950.0 + BoxMargin, 1950.0 - BoxMargin],  [8547.0 +84.6 + BoxMargin, 8547.0 + 1509.400 - BoxMargin],  [7000.0 + BoxMargin, 7000.0+3900 - BoxMargin]    ]
+    WallLimits  = [ BoxLimits[0], [BoxLimits[1][0],BoxLimits[1][0] + 2000.0 ] ] # [x,y] [cm,cm]
 
-    # LayerYLims = [ [6001., 6004.],  [6104., 6107.], [6207., 6210.], [8001., 8004.], [8104., 8107.], [8501., 8504.], [8604., 8607.], [8707., 8710.], [8810., 8813.], [8913., 8916.]  ]
-    # for i, layer in enumerate(LayerYLims):
-    #     for j, lim in enumerate(layer):
-    #         LayerYLims[i][j] += 547 + 2
-    
+    scintillator_height_all = 1.6 # 2cm +0.3*2Al case
     # 2023-04-25 Tom: changing to 6 layers. New numbers pull from simulation
 
-    scintillator_height_all = 2.6 # 2cm +0.3*2Al case
-    cm = 1
-    # LayerYLims= [[6547.0,6547.0+scintillator_height_all],
-    #              [6629.6,6629.6+scintillator_height_all],
-    #              [8547.0,8547.0+scintillator_height_all],
-    #              [8629.6,8629.6+scintillator_height_all],
-    #              [9132.2,9132.2+scintillator_height_all],
-    #              [9214.8,9214.8+scintillator_height_all],
-    #              [9297.4,9297.4+scintillator_height_all],
-    #              [9380.0,9380.0+scintillator_height_all],
-    #              [9462.6,9462.6+scintillator_height_all],
-    #              [9545.2,9545.2+scintillator_height_all]]
-      
     
+# y =  3.000,             8544.000
+# y =  84.600,            8462.400
+# y =  1346.200,          7200.800
+# y =  1427.800,          7119.200
+# y =  1509.400,          7037.600
+# y =  1591.000,          6956.000
+# y =  1672.600,          6874.400
+# y =  1754.200,          6792.800
+
     LayerYLims= [[8547.000,8547.000+scintillator_height_all],
                  [8628.600,8628.600+scintillator_height_all],
                  [9890.200,9890.200+scintillator_height_all],

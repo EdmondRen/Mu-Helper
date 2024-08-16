@@ -1,7 +1,7 @@
-iminuit
-joblib
 numpy
-scikit-learn
 scipy
+scikit-learn
+joblib
+iminuit
 tqdm
 uncertainties
